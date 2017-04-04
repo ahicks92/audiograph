@@ -26,6 +26,7 @@ This class does not provide an intro message."""
                 cmd = getattr(self, "do_"+word[1:], None)
                 if cmd is None:
                     print(word + " is not a valid command. Use .help for help.")
+                    continue
                 cmd(rest)
             else:
                 self.do_default(line)

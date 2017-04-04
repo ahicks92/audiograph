@@ -107,6 +107,9 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
             self.panner.mul.linear_ramp_to_value(block_duration/2, 0.0)
             self.faded_out = True
             return
+        elif (y < self.min_y or y > self.max_y):
+            # If we accidentally update the oscillators, they can get set to odd and very expensive values.
+            return
         elif (self.min_y < y and y < self.max_y) and self.faded_out:
             self.panner.mul.linear_ramp_to_value(block_duration/2, 1.0)
             self.faded_out = False

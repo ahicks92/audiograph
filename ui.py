@@ -2,7 +2,7 @@
 import command_parser
 import sonifier
 import sympy
-from sympy.utilities import lambdify
+from sympy.utilities.lambdify import lambdify, lambdastr
 from sympy.parsing import sympy_parser
 
 class Ui(command_parser.CommandParserBase):
@@ -19,10 +19,13 @@ class Ui(command_parser.CommandParserBase):
         self.x_symbol, self.y_symbol = sympy.symbols("x, y")
         self.current_graph = None
 
-    def make_graph(self, equation):
-        sym = sympy_parser.parse_expr(equation, transformations = 
+    def parse(self, equation):
+        return sympy_parser.parse_expr(equation, transformations = 
             sympy_parser.standard_transformations + (sympy_parser.split_symbols, sympy_parser.implicit_multiplication,
                 sympy_parser.function_exponentiation))
+
+    def make_graph(self, equation):
+        sym = self.parse(equation)
         f = lambdify((self.x_symbol, ), sym)
         return sonifier.Sonifier(f = f, duration = self.duration, min_x = self.min_x,
             max_x = self.max_x, min_y = self.min_y, max_y = self.max_y,
@@ -118,3 +121,24 @@ The file name must not contain spaces and must end in .wav or .ogg.  It will be 
         graph = self.make_graph(equation)
         graph.write_file(fname)
         graph.shutdown()
+
+
+    def do_eval(self, argument):
+        """Evaluate the argument with sympy and display.
+
+syntax:
+.eval <expression>: Evaluate the expression."""
+        if len(argument) == 0:
+            print("Invalid syntax. See .help eval for details.")
+            return
+        try:
+            sym = self.parse(argument)
+            sympy.simplify(sym)
+        except:
+            print("Couldn't parse expression.")
+            return
+        try:
+            print(sym.evalf())
+        except:
+            print(sym)
+
