@@ -68,8 +68,7 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.y_ticker = libaudioverse.AdditiveSawNode(self.server)
         self.x_ticker.mul = 0
         self.y_ticker.mul = 0
-        self.x_ticker.frequency = 300
-        self.y_ticker.frequency = 400
+        self.x_ticker.frequency = 115
         self.x_ticker.connect(0, self.panner, 0)
         self.y_ticker.connect(0, self.panner, 0)
         self.prev_x = min_x
