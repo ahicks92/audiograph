@@ -107,11 +107,11 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
             self.panner.mul.linear_ramp_to_value(block_duration/2, 0.0)
             self.faded_out = True
             return
-        elif self.faded_out:
+        elif (self.min_y < y and y < self.max_y) and self.faded_out:
             self.panner.mul.linear_ramp_to_value(block_duration/2, 1.0)
             self.faded_out = False
         (modulator_freq, modulator_mul, main_freq) = compute_frequencies(y, self.min_y, self.max_y)
-        self.main_modulator.frequency = modulator_freq
+        #self.main_modulator.frequency = modulator_freq
         self.main_modulator.mul = modulator_mul
         self.main_tone.frequency = main_freq
         self.panner.azimuth = -(hrtf_width/2)+normalized_time*hrtf_width
