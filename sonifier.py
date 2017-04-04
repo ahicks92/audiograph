@@ -77,7 +77,6 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.server.set_block_callback(self.model_update)
         # We start not faded out.
         self.faded_out = False
-        self.finished = False
         # Copy everything.
         self.f = f
         self.duration = duration
@@ -89,17 +88,14 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.x_ticks = x_ticks
         self.y_ticks = y_ticks
         self.axis_ticks = axis_ticks
+        self.finished = False
 
     def model_update(self, server, time):
-        if self.finished:
-            return
         normalized_time = time/self.duration
         if normalized_time >= 1.0:
             # Schedule a fade out on the panner.
             self.panner.mul.linear_ramp_to_value(0.2, 0.0)
-            # We're supposed to be able to clear the callback instead, but there's a bug so we can't.
-            # self.server.set_block_callback(None)
-            # So instead we use a flag.
+            self.server.set_block_callback(None)
             self.finished = True
         normalized_time = time/self.duration
         x_range = self.max_x-self.min_x
