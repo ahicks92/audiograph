@@ -31,3 +31,51 @@ class Ui(command_parser.CommandParserBase):
             max_x = self.max_x, min_y = self.min_y, max_y = self.max_y,
             hrtf = self.hrtf)
         self.current_graph.to_audio_device()
+
+    def do_xrange(self, argument):
+        """Set the range for x.
+
+Syntax:
+.xrange: Show the current range for x.
+.xrange <min> <max>: configure us to evaluate the graph from x=min to x=max,.
+
+Floating point arguments are allowed."""
+        if len(argument) == 0:
+            print("Range is {} <= x <= {}".format(self.min_x, self.max_x))
+            return
+        words = argument.split()
+        try:
+            min = float(words[0])
+            max = float(words[1])
+        except:
+            print("Couldn't parse.  See .help xrange for syntax.")
+            return
+        if min >= max:
+            print("Error: min must be strictly less than max.")
+            return
+        self.min_x = min
+        self.max_x = max
+
+    def do_yrange(self, argument):
+        """Set the range for y.
+
+Syntax:
+.yrange: Show the current range for y.
+.yrange <min> <max>: configure us to show values of the function between y=min and y=max.
+
+Floating point arguments are allowed."""
+        if len(argument) == 0:
+            print("Range is {} <= y <= {}".format(self.min_y, self.max_y))
+            return
+        words = argument.split()
+        try:
+            min = float(words[0])
+            max = float(words[1])
+        except:
+            print("Couldn't parse.  See .help yrange for syntax.")
+            return
+        if min >= max:
+            print("Error: min must be strictly less than max.")
+            return
+        self.min_y = min
+        self.max_y = max
