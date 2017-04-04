@@ -19,19 +19,21 @@ class Ui(command_parser.CommandParserBase):
         self.x_symbol, self.y_symbol = sympy.symbols("x, y")
         self.current_graph = None
 
-    def do_default(self, argument):
-        print("Graphing ", argument)
-        sym = sympy_parser.parse_expr(argument, transformations = 
+    def make_graph(self, equation):
+        sym = sympy_parser.parse_expr(equation, transformations = 
             sympy_parser.standard_transformations + (sympy_parser.split_symbols, sympy_parser.implicit_multiplication,
                 sympy_parser.function_exponentiation))
         f = lambdify((self.x_symbol, ), sym)
-        if self.current_graph is not None:
-            self.current_graph.shutdown()
-        self.current_graph = sonifier.Sonifier(f = f, duration = self.duration, min_x = self.min_x,
+        return sonifier.Sonifier(f = f, duration = self.duration, min_x = self.min_x,
             max_x = self.max_x, min_y = self.min_y, max_y = self.max_y,
             hrtf = self.hrtf)
-        self.current_graph.to_audio_device()
 
+    def do_default(self, argument):
+        print("Graphing ", argument)
+        if self.current_graph is not None:
+            self.current_graph.shutdown()
+        self.current_graph = self.make_graph(argument)
+        self.current_graph.to_audio_device()
 
     def quit_hook(self):
         if self.current_graph:
@@ -102,3 +104,17 @@ syntax:
             print("Duration must be at least 1 second.")
             return
         self.duration = new_dur
+
+    def do_file(self, argument):
+        """Graph an equation to a file.
+        
+syntax:
+.file <name> <equation>: Graph equation to file name.
+
+The file name must not contain spaces and must end in .wav or .ogg.  It will be written to the current working directory."""
+        fname, sep, equation = argument.partition(" ")
+        if len(fname) == 0 or len(equation) == 0:
+            print("Invalid syntax. See .help file.")
+        graph = self.make_graph(equation)
+        graph.write_file(fname)
+        graph.shutdown()
