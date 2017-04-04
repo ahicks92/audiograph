@@ -16,6 +16,7 @@ class Ui(command_parser.CommandParserBase):
         self.max_y = 10
         self.duration = 5.0
         self.hrtf = False
+        self.y_ticks = None
         self.x_symbol, self.y_symbol = sympy.symbols("x, y")
         self.current_graph = None
 
@@ -29,7 +30,7 @@ class Ui(command_parser.CommandParserBase):
         f = lambdify((self.x_symbol, ), sym)
         return sonifier.Sonifier(f = f, duration = self.duration, min_x = self.min_x,
             max_x = self.max_x, min_y = self.min_y, max_y = self.max_y,
-            hrtf = self.hrtf)
+            hrtf = self.hrtf, y_ticks = self.y_ticks)
 
     def do_default(self, argument):
         print("Graphing ", argument)
@@ -141,4 +142,27 @@ syntax:
             print(sym.evalf())
         except:
             print(sym)
+
+    def do_yticks(self, argument):
+        """Turn on/off ticks for the y axis.
+
+syntax:
+.yticks: Show if y ticks are on or off.
+.yticks off: Turn y ticks off.
+.yticks <number>: Tick when we cross a y value that is a multiple of <number>.
+
+This command is equivalent to setting how axises are shown on a sighted graphing calculator."""
+        if argument == "off":
+            self.y_ticks = None
+        elif len(argument) == 0 and self.y_ticks is None:
+            print("Y ticks are off.")
+        elif len(argument) == 0:
+            print("We are ticking when y is a multiple of", self.y_ticks)
+        else:
+            try:
+                y_ticks = float(argument)
+            except:
+                print("Invalid syntax. See .help yticks for details.")
+                return
+            self.y_ticks = y_ticks
 

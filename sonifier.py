@@ -136,6 +136,7 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
             if now != prev:
                 self.y_ticker.mul = 0.0
                 self.y_ticker.reset()
+                self.y_ticker.frequency = main_freq
                 self.y_ticker.mul.linear_ramp_to_value(0.005, 0.5)
                 self.y_ticker.mul.linear_ramp_to_value(0.05, 0.0)
         self.prev_x = x
