@@ -147,3 +147,5 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
 
     def shutdown(self):
         self.server.clear_output_device()
+        # the following is necessary to avoid a circular reference.
+        self.server.set_block_callback(None)

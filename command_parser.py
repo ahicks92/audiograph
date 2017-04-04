@@ -57,4 +57,9 @@ use .help for a list of commands. Use .help <command> for info on a command."""
         """Quit the program.
 
 syntax: .quit"""
+        self.quit_hook()
         self._running = False
+
+    def quit_hook(self):
+        """A hook to let subclasses do something on quit."""
+        pass

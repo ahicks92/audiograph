@@ -32,6 +32,11 @@ class Ui(command_parser.CommandParserBase):
             hrtf = self.hrtf)
         self.current_graph.to_audio_device()
 
+
+    def quit_hook(self):
+        if self.current_graph:
+            self.current_graph.shutdown()
+
     def do_xrange(self, argument):
         """Set the range for x.
 
