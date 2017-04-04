@@ -84,3 +84,21 @@ Floating point arguments are allowed."""
             return
         self.min_y = min
         self.max_y = max
+
+    def do_duration(self, argument):
+        """Set the duration of the graph.
+syntax:
+.duration: Show the duration.
+.duration <seconds>: Set the duration."""
+        if len(argument) == 0:
+            print("Current duration:", self.duration)
+            return
+        try:
+            new_dur = float(argument)
+        except:
+            print("Couldn't parse duration. See .help duration for syntax.")
+            return
+        if new_dur <= 1.0:
+            print("Duration must be at least 1 second.")
+            return
+        self.duration = new_dur
