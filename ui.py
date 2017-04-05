@@ -18,6 +18,7 @@ class Ui(command_parser.CommandParserBase):
         self.hrtf = False
         self.x_ticks = None
         self.y_ticks = None
+        self.zero_ticks = False
         self.x_symbol, self.y_symbol = sympy.symbols("x, y")
         self.current_graph = None
 
@@ -31,7 +32,7 @@ class Ui(command_parser.CommandParserBase):
         f = lambdify((self.x_symbol, ), sym)
         return sonifier.Sonifier(f = f, duration = self.duration, min_x = self.min_x,
             max_x = self.max_x, min_y = self.min_y, max_y = self.max_y,
-            hrtf = self.hrtf, x_ticks = self.x_ticks, y_ticks = self.y_ticks)
+            hrtf = self.hrtf, x_ticks = self.x_ticks, y_ticks = self.y_ticks, zero_ticks = self.zero_ticks)
 
     def do_default(self, argument):
         print("Graphing ", argument)
@@ -189,4 +190,24 @@ This command is equivalent to setting how axises are shown on a sighted graphing
                 print("Invalid syntax. See .help yticks for details.")
                 return
             self.y_ticks = y_ticks
-            self.y_ticks = y_ticks
+
+    def do_0ticks(self, argument):
+        """Turn on/off ticks for y = 0.
+
+Syntax:
+.0ticks: Show if 0 crossing ticks are on or off.
+.0ticks on: set ticks on when y crosses 0.
+.0ticks off: set ticks off when y crosses 0.
+
+Finding 0 values can be very important in optimisation. This should help."""
+
+        if argument == "off":
+            self.zero_ticks = False
+        elif argument == "on":
+            self.zero_ticks = True
+        elif len(argument) == 0:
+            if self.zero_ticks == True: print("Zero crossing ticks are on.")
+            else: print("Zero crossing ticks are off.")
+        else:
+            print("Invalid syntax.")
+

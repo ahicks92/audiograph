@@ -34,7 +34,7 @@ This class supports outputting to the sound card or a wave file. See __init__'s 
 Every instance makes its own Libaudioverse server."""
 
 
-    def __init__(self, f, duration, min_x, max_x, min_y, max_y, x_ticks = None, y_ticks = None, hrtf = False, axis_ticks = False):
+    def __init__(self, f, duration, min_x, max_x, min_y, max_y, x_ticks = None, y_ticks = None, zero_ticks = False, hrtf = False, axis_ticks = False):
         """Parameters:
 
 f: A callable. Given a value for x, return a value for y.
@@ -43,6 +43,7 @@ min_x, max_x: The range of the X axis.
 min_y, max_y: The range of the y axis.
 x_ticks: If set to a value besides None, tick for every time we cross a multiple of the value.
 y_ticks: x_ticks, but for y.
+zero_ticks: tick when y crosses zero.
 hrtf: If True, use HRTF panning.
 axis_ticks: If True, tick for crossing x=0 or y=0.
 
@@ -63,16 +64,22 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.panner.connect(0, self.server)
         if hrtf:
             self.panner.strategy = libaudioverse.PanningStrategies.hrtf
-        # These are for the small ticks. We don't necessaerily use them, but we get them going anyway so that we can if we want.
+        # These are for the small ticks. We don't necessarily use them, but we get them going anyway so that we can if we want.
         self.x_ticker = libaudioverse.AdditiveSquareNode(self.server)
         self.y_ticker = libaudioverse.AdditiveSawNode(self.server)
+        self.zero_ticker = libaudioverse.AdditiveSawNode(self.server)
         self.x_ticker.mul = 0
         self.y_ticker.mul = 0
+        self.zero_ticker.mul = 0
         self.x_ticker.frequency = 115
         self.x_ticker.connect(0, self.panner, 0)
         self.y_ticker.connect(0, self.panner, 0)
+        self.zero_ticker.connect(0, self.panner, 0)
         self.prev_x = min_x
         self.prev_y = f(min_x)
+        if f(min_x) < 0: self.prev_y_sign = -1
+        elif f(min_x) == 0: self.prev_y_sign = 0
+        else: self.prev_y_sign = 1
         self.server.set_block_callback(self.model_update)
         # We start not faded out.
         self.faded_out = False
@@ -86,6 +93,7 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.hrtf = hrtf
         self.x_ticks = x_ticks
         self.y_ticks = y_ticks
+        self.zero_ticks = zero_ticks
         self.axis_ticks = axis_ticks
         self.finished = False
 
@@ -138,9 +146,20 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
                 self.y_ticker.frequency = main_freq
                 self.y_ticker.mul.linear_ramp_to_value(0.005, 0.5)
                 self.y_ticker.mul.linear_ramp_to_value(0.05, 0.0)
+        if y < 0: self.y_sign = -1
+        elif y == 0: self.y_sign = 0
+        else: self.y_sign = 1
+        if self.zero_ticks:
+            if ((self.prev_y_sign != 0 and self.y_sign == 0) or
+               ((abs(self.prev_y_sign-self.y_sign)) > 1)):
+                self.zero_ticker.mul = 0.0
+                self.zero_ticker.reset()
+                self.zero_ticker.frequency = main_freq
+                self.zero_ticker.mul.linear_ramp_to_value(0.005, 0.5)
+                self.zero_ticker.mul.linear_ramp_to_value(0.05, 0.0)
+        self.prev_y_sign = self.y_sign
         self.prev_x = x
         self.prev_y = y
-
     def write_file(self, file):
         """Output to a file. .wav or .ogg."""
         self.server.write_file(path = file, channels = 2, duration = self.duration+0.5)
