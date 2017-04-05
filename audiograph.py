@@ -1,3 +1,4 @@
+import sympy
 import libaudioverse
 import ui
 
