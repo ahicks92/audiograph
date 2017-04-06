@@ -5,7 +5,9 @@ main_volume = 0.3
 semitone = 2**(1/12) # Multiplier for 1 semitone up or down.
 semitone_range = 32 # We graph over 3 octaves.
 # HRTF parameters.
-hrtf_vertical_range = 0
+hrtf_min_angle = -20
+hrtf_max_angle = 60
+hrtf_vertical_range = hrtf_max_angle-hrtf_min_angle
 hrtf_width = 180
 block_size = 128
 # HRTF only works well at 44100.
@@ -50,8 +52,13 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.main_tone = libaudioverse.AdditiveTriangleNode(self.server)
         self.main_tone.frequency = main_start_frequency
         self.main_tone.mul = main_volume
+        # This helps HRTF a little.
+        self.main_noise = libaudioverse.NoiseNode(self.server)
+        self.main_noise.mul = 0.01
         self.panner = libaudioverse.MultipannerNode(self.server, "default")
         self.main_tone.connect(0, self.panner, 0)
+        if hrtf:
+            self.main_noise.connect(0, self.panner, 0)
         self.panner.connect(0, self.server)
         if hrtf:
             self.panner.strategy = libaudioverse.PanningStrategies.hrtf
@@ -115,8 +122,7 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.main_tone.frequency = main_freq
         self.panner.azimuth = -(hrtf_width/2)+normalized_time*hrtf_width
         normalized_y = (y-self.min_y)/(self.max_y-self.min_y)
-        normalized_y -= 0.5
-        self.panner.elevation = hrtf_vertical_range*normalized_y
+        self.panner.elevation = hrtf_min_angle+hrtf_vertical_range*normalized_y
         # Ticks.
         if self.x_ticks:
             prev = self.prev_x//self.x_ticks

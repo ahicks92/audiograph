@@ -211,3 +211,25 @@ Finding 0 values can be very important in optimisation. This should help."""
         else:
             print("Invalid syntax.")
 
+
+    def do_hrtf(self, argument):
+        """Turn on/off HRTF.
+
+Syntax:
+.hrtf: Show if HRTF is on or off.
+.hrtf on: Turn HRTF on.
+.hrtf off: Turn HRTF off.
+
+HRTF is currently experimental. The model is suboptimal."""
+        if argument == "off":
+            self.hrtf = False
+        elif argument == "on":
+            self.hrtf = True
+        elif len(argument) == 0:
+            if self.zero_ticks:
+                print("HRTF is on.")
+            else:
+                print("HRTF is off.")
+        else:
+            print("Invalid syntax.")
+
