@@ -20,16 +20,21 @@ This class does not provide an intro message."""
         self._running = True
         while self._running:
             line = input(self.prompt)
-            if line.startswith("."):
-                word, sep, rest = line.partition(" ")
-                rest = rest.lstrip().rstrip()
-                cmd = getattr(self, "do_"+word[1:], None)
-                if cmd is None:
-                    print(word + " is not a valid command. Use .help for help.")
-                    continue
-                cmd(rest)
-            else:
-                self.do_default(line)
+            self.handle_command(line)
+
+    def handle_command(self, line):
+        if len(line) == 0:
+            return
+        if line.startswith("."):
+            word, sep, rest = line.partition(" ")
+            rest = rest.lstrip().rstrip()
+            cmd = getattr(self, "do_"+word[1:], None)
+            if cmd is None:
+                print(word + " is not a valid command. Use .help for help.")
+                return
+            cmd(rest)
+        else:
+            self.do_default(line)
 
     def do_help(self, argument):
         """Get help on a command.
@@ -64,3 +69,26 @@ syntax: .quit"""
     def quit_hook(self):
         """A hook to let subclasses do something on quit."""
         pass
+
+    def do_echo(self, argument):
+        """For batch processing. Print the argument."""
+        print(argument)
+
+    def do_batch(self, argument):
+        """Run a script.
+
+syntax:
+.batch <file>: Run commands in <file>.
+
+The syntax of <file> is the same as what you'd type at the terminal, one command per line."""
+        if len(argument) == 0:
+            print("Invalid syntax.")
+            return
+        try:
+            f=open(argument)
+        except FileNotFoundError:
+            print("File not found.")
+            return
+        for l in f:
+            l = l.replace("\r", "").replace("\n", "")
+            self.handle_command(l)
