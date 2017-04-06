@@ -1,7 +1,5 @@
 import libaudioverse
 
-modulator_start_frequency = 5
-modulator_start_interval = 30
 main_start_frequency = 130.8 # C3, 1 octave below Middle c.
 main_volume = 0.3
 semitone = 2**(1/12) # Multiplier for 1 semitone up or down.
@@ -15,16 +13,13 @@ sr = 44100
 block_duration = block_size/sr
 
 def compute_frequencies(value, min_y, max_y):
-    """Returns (modulator_frequency, modulator_interval, main) tuples.
+    """Returns the frequency of the tone.
 
 This function does not error check. min_y < value < max_y, or else. Being silent outside the interval is the purpose of the class below."""
     normalized = (value-min_y)/(max_y-min_y)
     semitones = normalized*semitone_range
     multiplier = semitone**semitones
-    modulator = modulator_start_frequency*multiplier
-    modulator_interval = modulator_start_interval*multiplier
-    main = main_start_frequency*multiplier
-    return (modulator, modulator_interval, main)
+    return main_start_frequency*multiplier
 
 class Sonifier:
     """Sonify a graph.
@@ -53,10 +48,6 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         # This is around 3 milliseconds.  We can probably increase the resolution further.
         self.server = libaudioverse.Server(block_size = block_size, sample_rate = sr)
         self.main_tone = libaudioverse.AdditiveTriangleNode(self.server)
-        self.main_modulator = libaudioverse.SineNode(self.server)
-        self.main_modulator.connect(0, self.main_tone.frequency)
-        self.main_modulator.mul = modulator_start_interval
-        self.main_modulator.frequency = modulator_start_frequency
         self.main_tone.frequency = main_start_frequency
         self.main_tone.mul = main_volume
         self.panner = libaudioverse.MultipannerNode(self.server, "default")
@@ -120,9 +111,7 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         elif (self.min_y < y and y < self.max_y) and self.faded_out:
             self.panner.mul.linear_ramp_to_value(block_duration/2, 1.0)
             self.faded_out = False
-        (modulator_freq, modulator_mul, main_freq) = compute_frequencies(y, self.min_y, self.max_y)
-        #self.main_modulator.frequency = modulator_freq
-        self.main_modulator.mul = modulator_mul
+        main_freq = compute_frequencies(y, self.min_y, self.max_y)
         self.main_tone.frequency = main_freq
         self.panner.azimuth = -(hrtf_width/2)+normalized_time*hrtf_width
         normalized_y = (y-self.min_y)/(self.max_y-self.min_y)
