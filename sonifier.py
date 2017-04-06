@@ -146,20 +146,22 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
                 self.y_ticker.frequency = main_freq
                 self.y_ticker.mul.linear_ramp_to_value(0.005, 0.5)
                 self.y_ticker.mul.linear_ramp_to_value(0.05, 0.0)
-        if y < 0: self.y_sign = -1
-        elif y == 0: self.y_sign = 0
-        else: self.y_sign = 1
+        if y < 0: y_sign = -1
+        elif y == 0: y_sign = 0
+        else: y_sign = 1
         if self.zero_ticks:
-            if ((self.prev_y_sign != 0 and self.y_sign == 0) or
-               ((abs(self.prev_y_sign-self.y_sign)) > 1)):
+            if ((self.prev_y_sign != 0 and y_sign == 0) or
+               ((abs(self.prev_y_sign-y_sign)) > 1)):
                 self.zero_ticker.mul = 0.0
                 self.zero_ticker.reset()
                 self.zero_ticker.frequency = main_freq
-                self.zero_ticker.mul.linear_ramp_to_value(0.005, 0.5)
-                self.zero_ticker.mul.linear_ramp_to_value(0.05, 0.0)
-        self.prev_y_sign = self.y_sign
+                self.zero_ticker.mul.linear_ramp_to_value(0.05, 0.7)
+                self.zero_ticker.mul.linear_ramp_to_value(0.1, 0.0)
+                self.zero_ticker.frequency.linear_ramp_to_value(0.07, main_freq**semitone)
+        self.prev_y_sign = y_sign
         self.prev_x = x
         self.prev_y = y
+
     def write_file(self, file):
         """Output to a file. .wav or .ogg."""
         self.server.write_file(path = file, channels = 2, duration = self.duration+0.5)
