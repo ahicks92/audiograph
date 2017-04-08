@@ -5,10 +5,9 @@ main_volume = 0.3
 semitone = 2**(1/12) # Multiplier for 1 semitone up or down.
 semitone_range = 32 # We graph over 3 octaves.
 # HRTF parameters.
-hrtf_min_angle = -20
-hrtf_max_angle = 60
-hrtf_vertical_range = hrtf_max_angle-hrtf_min_angle
-hrtf_width = 180
+hrtf_width = 1
+hrtf_height = 1
+hrtf_listener_offset = 0.2
 block_size = 128
 # HRTF only works well at 44100.
 sr = 44100
@@ -56,12 +55,17 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.main_noise = libaudioverse.NoiseNode(self.server)
         self.main_noise.mul = 0.01
         self.panner = libaudioverse.MultipannerNode(self.server, "default")
+        self.environment = libaudioverse.EnvironmentNode(self.server, "default")
+        self.source = libaudioverse.SourceNode(self.server, self.environment)
         self.main_tone.connect(0, self.panner, 0)
+        self.main_tone.connect(0, self.source, 0)
         if hrtf:
             self.main_noise.connect(0, self.panner, 0)
-        self.panner.connect(0, self.server)
-        if hrtf:
-            self.panner.strategy = libaudioverse.PanningStrategies.hrtf
+            self.environment.connect(0, self.server)
+            self.environment.panning_strategy = libaudioverse.PanningStrategies.hrtf
+            self.environment.position = (0, 0, hrtf_listener_offset)
+        else:
+            self.panner.connect(0, self.server)
         # These are for the small ticks. We don't necessarily use them, but we get them going anyway so that we can if we want.
         self.x_ticker = libaudioverse.AdditiveSquareNode(self.server)
         self.y_ticker = libaudioverse.AdditiveSawNode(self.server)
@@ -96,10 +100,14 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.finished = False
 
     def model_update(self, server, time):
+        if self.hrtf:
+            fade_target = self.environment
+        else:
+            fade_target = self.panner
         normalized_time = time/self.duration
         if normalized_time >= 1.0:
             # Schedule a fade out on the panner.
-            self.panner.mul.linear_ramp_to_value(0.2, 0.0)
+            fade_target.mul.linear_ramp_to_value(0.2, 0.0)
             self.server.set_block_callback(None)
             self.finished = True
         normalized_time = time/self.duration
@@ -109,20 +117,20 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         y = self.f(x)
         if (y < self.min_y or y > self.max_y) and not self.faded_out:
             # Do a fast fade out.
-            self.panner.mul.linear_ramp_to_value(block_duration/2, 0.0)
+            fade_target.mul.linear_ramp_to_value(block_duration/2, 0.0)
             self.faded_out = True
             return
         elif (y < self.min_y or y > self.max_y):
             # If we accidentally update the oscillators, they can get set to odd and very expensive values.
             return
         elif (self.min_y < y and y < self.max_y) and self.faded_out:
-            self.panner.mul.linear_ramp_to_value(block_duration/2, 1.0)
+            fade_target.mul.linear_ramp_to_value(block_duration/2, 1.0)
             self.faded_out = False
         main_freq = compute_frequencies(y, self.min_y, self.max_y)
         self.main_tone.frequency = main_freq
-        self.panner.azimuth = -(hrtf_width/2)+normalized_time*hrtf_width
+        self.panner.azimuth = -(180/2)+normalized_time*180
         normalized_y = (y-self.min_y)/(self.max_y-self.min_y)
-        self.panner.elevation = hrtf_min_angle+hrtf_vertical_range*normalized_y
+        self.source.position = (normalized_time-0.5, normalized_y-0.5, 0)
         # Ticks.
         if self.x_ticks:
             prev = self.prev_x//self.x_ticks
