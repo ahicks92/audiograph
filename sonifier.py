@@ -7,7 +7,7 @@ semitone_range = 32 # We graph over 3 octaves.
 # HRTF parameters.
 hrtf_width = 1
 hrtf_height = 1
-hrtf_listener_offset = 0.2
+hrtf_listener_offset = 0.9
 block_size = 128
 # HRTF only works well at 44100.
 sr = 44100
@@ -53,14 +53,14 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.main_tone.mul = main_volume
         # This helps HRTF a little.
         self.main_noise = libaudioverse.NoiseNode(self.server)
-        self.main_noise.mul = 0.01
+        self.main_noise.mul = 0.005
         self.panner = libaudioverse.MultipannerNode(self.server, "default")
         self.environment = libaudioverse.EnvironmentNode(self.server, "default")
         self.source = libaudioverse.SourceNode(self.server, self.environment)
         self.main_tone.connect(0, self.panner, 0)
         self.main_tone.connect(0, self.source, 0)
         if hrtf:
-            self.main_noise.connect(0, self.panner, 0)
+            self.main_noise.connect(0, self.source, 0)
             self.environment.connect(0, self.server)
             self.environment.panning_strategy = libaudioverse.PanningStrategies.hrtf
             self.environment.position = (0, 0, hrtf_listener_offset)

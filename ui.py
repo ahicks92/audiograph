@@ -226,7 +226,7 @@ HRTF is currently experimental. The model is suboptimal."""
         elif argument == "on":
             self.hrtf = True
         elif len(argument) == 0:
-            if self.zero_ticks:
+            if self.hrtf:
                 print("HRTF is on.")
             else:
                 print("HRTF is off.")
