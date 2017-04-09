@@ -2,6 +2,7 @@ import libaudioverse
 
 main_start_frequency = 130.8 # C3, 1 octave below Middle c.
 main_volume = 0.3
+undefined_noise_volume = 0.3
 semitone = 2**(1/12) # Multiplier for 1 semitone up or down.
 semitone_range = 32 # We graph over 3 octaves.
 # HRTF parameters.
@@ -54,6 +55,9 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         # This helps HRTF a little.
         self.main_noise = libaudioverse.NoiseNode(self.server)
         self.main_noise.mul = 0.005
+        self.undefined_noise = libaudioverse.NoiseNode(self.server)
+        self.undefined_noise.mul = 0
+        self.undefined_noise.noise_type = libaudioverse.NoiseTypes.pink
         self.panner = libaudioverse.MultipannerNode(self.server, "default")
         self.environment = libaudioverse.EnvironmentNode(self.server, "default")
         self.source = libaudioverse.SourceNode(self.server, self.environment)
@@ -61,10 +65,12 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.main_tone.connect(0, self.source, 0)
         if hrtf:
             self.main_noise.connect(0, self.source, 0)
+            self.undefined_noise.connect(0, self.source, 0)
             self.environment.connect(0, self.server)
             self.environment.panning_strategy = libaudioverse.PanningStrategies.hrtf
             self.environment.position = (0, 0, hrtf_listener_offset)
         else:
+            self.undefined_noise.connect(0, self.panner, 0)
             self.panner.connect(0, self.server)
         # These are for the small ticks. We don't necessarily use them, but we get them going anyway so that we can if we want.
         self.x_ticker = libaudioverse.AdditiveSquareNode(self.server)
@@ -78,9 +84,15 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.y_ticker.connect(0, self.panner, 0)
         self.zero_ticker.connect(0, self.panner, 0)
         self.prev_x = min_x
-        self.prev_y = f(min_x)
-        if f(min_x) < 0: self.prev_y_sign = -1
-        elif f(min_x) == 0: self.prev_y_sign = 0
+        self.prev_y = min_y+(max_y-min_y)/2
+        try:
+            tmp = f(min_x)
+            if isinstance(tmp, float):
+                self.prev_y = tmp
+        except:
+            pass
+        if self.prev_y < 0: self.prev_y_sign = -1
+        elif self.prev_y == 0: self.prev_y_sign = 0
         else: self.prev_y_sign = 1
         self.server.set_block_callback(self.model_update)
         # We start not faded out.
@@ -114,7 +126,16 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         x_range = self.max_x-self.min_x
         x_offset = normalized_time*x_range
         x = self.min_x+x_offset
-        y = self.f(x)
+        y = self.min_y+(self.max_y-self.min_y)/2
+        evaluated = False
+        try:
+            tmp = self.f(x)
+            if isinstance(tmp, float):
+                evaluated = True
+                y = tmp
+        except Exception:
+            # We can't do anything reasonable here.
+            pass
         if (y < self.min_y or y > self.max_y) and not self.faded_out:
             # Do a fast fade out.
             fade_target.mul.linear_ramp_to_value(block_duration/2, 0.0)
@@ -126,8 +147,14 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         elif (self.min_y < y and y < self.max_y) and self.faded_out:
             fade_target.mul.linear_ramp_to_value(block_duration/2, 1.0)
             self.faded_out = False
-        main_freq = compute_frequencies(y, self.min_y, self.max_y)
-        self.main_tone.frequency = main_freq
+        if evaluated:
+            main_freq = compute_frequencies(y, self.min_y, self.max_y)
+            self.main_tone.frequency = main_freq
+            self.undefined_noise.mul = 0
+            self.main_tone.mul = main_volume
+        else:
+            self.undefined_noise.mul = undefined_noise_volume
+            self.main_tone.mul = 0
         self.panner.azimuth = -(180/2)+normalized_time*180
         normalized_y = (y-self.min_y)/(self.max_y-self.min_y)
         self.source.position = (normalized_time-0.5, normalized_y-0.5, 0)
@@ -140,30 +167,31 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
                 self.x_ticker.reset()
                 self.x_ticker.mul.linear_ramp_to_value(0.005, 0.5)
                 self.x_ticker.mul.linear_ramp_to_value(0.05, 0.0)
-        if self.y_ticks:
-            prev = self.prev_y//self.y_ticks
-            now = y//self.y_ticks
-            if now != prev:
-                self.y_ticker.mul = 0.0
-                self.y_ticker.reset()
-                self.y_ticker.frequency = main_freq
-                self.y_ticker.mul.linear_ramp_to_value(0.005, 0.5)
-                self.y_ticker.mul.linear_ramp_to_value(0.05, 0.0)
-        if y < 0: y_sign = -1
-        elif y == 0: y_sign = 0
-        else: y_sign = 1
-        if self.zero_ticks:
-            if ((self.prev_y_sign != 0 and y_sign == 0) or
-               ((abs(self.prev_y_sign-y_sign)) > 1)):
-                self.zero_ticker.mul = 0.0
-                self.zero_ticker.reset()
-                self.zero_ticker.frequency = main_freq
-                self.zero_ticker.mul.linear_ramp_to_value(0.05, 0.7)
-                self.zero_ticker.mul.linear_ramp_to_value(0.1, 0.0)
-                self.zero_ticker.frequency.linear_ramp_to_value(0.07, main_freq**semitone)
-        self.prev_y_sign = y_sign
         self.prev_x = x
-        self.prev_y = y
+        if evaluated:
+            if self.y_ticks:
+                prev = self.prev_y//self.y_ticks
+                now = y//self.y_ticks
+                if now != prev:
+                    self.y_ticker.mul = 0.0
+                    self.y_ticker.reset()
+                    self.y_ticker.frequency = main_freq
+                    self.y_ticker.mul.linear_ramp_to_value(0.005, 0.5)
+                    self.y_ticker.mul.linear_ramp_to_value(0.05, 0.0)
+            if y < 0: y_sign = -1
+            elif y == 0: y_sign = 0
+            else: y_sign = 1
+            if self.zero_ticks:
+                if ((self.prev_y_sign != 0 and y_sign == 0) or
+                   ((abs(self.prev_y_sign-y_sign)) > 1)):
+                    self.zero_ticker.mul = 0.0
+                    self.zero_ticker.reset()
+                    self.zero_ticker.frequency = main_freq
+                    self.zero_ticker.mul.linear_ramp_to_value(0.05, 0.7)
+                    self.zero_ticker.mul.linear_ramp_to_value(0.1, 0.0)
+                    self.zero_ticker.frequency.linear_ramp_to_value(0.07, main_freq**semitone)
+            self.prev_y_sign = y_sign
+            self.prev_y = y
 
     def write_file(self, file):
         """Output to a file. .wav or .ogg."""
