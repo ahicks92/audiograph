@@ -1,12 +1,18 @@
 # -*- mode: python -*-
+import libaudioverse
+
+files = []
+for i, j in libaudioverse.find_datafiles():
+    for k in j:
+        files.append((k, i))
 
 block_cipher = None
 
 
-a = Analysis(['audiograph.spec'],
+a = Analysis(['audiograph.py'],
              pathex=['c:\\projects\\in_progress\\audiograph'],
              binaries=[],
-             datas=[],
+             datas=files,
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
