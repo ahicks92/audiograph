@@ -29,11 +29,17 @@ class Ui(command_parser.CommandParserBase):
 
     def parse(self, equation):
         return sympy_parser.parse_expr(equation, transformations = 
-            sympy_parser.standard_transformations + (sympy_parser.split_symbols, sympy_parser.implicit_multiplication,
+            sympy_parser.standard_transformations + (sympy_parser.implicit_multiplication,
                 sympy_parser.function_exponentiation))
 
     def make_graph(self, equation):
         sym = self.parse(equation)
+        if len(sym.free_symbols) > 1 or (len(sym.free_symbols) == 1 and self.x_symbol not in sym.free_symbols):
+            symbols = set(sym.free_symbols)-{self.x_symbol}
+            print("It appears you have attempted to use the following additional constants and/or functions:")
+            print(" ".join((str(i) for i in sorted(list(symbols)))))
+            print("Expressions must only use the variable x.")
+            return
         f = lambdify((self.x_symbol, ), sym)
         return sonifier.Sonifier(f = f, duration = self.duration, min_x = self.min_x,
             max_x = self.max_x, min_y = self.min_y, max_y = self.max_y,
@@ -45,6 +51,9 @@ class Ui(command_parser.CommandParserBase):
             if self.current_graph is not None:
                 self.current_graph.shutdown()
             self.current_graph = self.make_graph(argument)
+            if self.current_graph is None:
+                # We couldn't parse it.
+                return
             self.current_graph.to_audio_device()
         except Exception as e:
             if self.debug:
