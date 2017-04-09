@@ -83,6 +83,9 @@ As this class graphs, it will produce distinct ticks as the value of f crosses m
         self.x_ticker.connect(0, self.panner, 0)
         self.y_ticker.connect(0, self.panner, 0)
         self.zero_ticker.connect(0, self.panner, 0)
+        self.x_ticker.connect(0, self.source, 0)
+        self.y_ticker.connect(0, self.source, 0)
+        self.zero_ticker.connect(0, self.source, 0)
         self.prev_x = min_x
         self.prev_y = min_y+(max_y-min_y)/2
         try:
