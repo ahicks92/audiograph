@@ -1,0 +1,44 @@
+.xrange -3 3
+.file parabola.ogg x**2
+.xrange 0 10
+.yrange 0 10
+.file line.ogg x
+.xrange 0 13
+.yrange -1 1
+.xticks 3.14
+.0ticks on
+.duration 10
+.file sine.ogg sin(x)
+.duration 5
+.0ticks off
+.xticks off
+.yticks 1
+.xrange 0 40
+.yrange 0 100
+.file n_ln_n.ogg x*ln(x)
+.xrange 0 10
+.yrange 0 10
+.file ln.ogg ln(x)
+
+.hrtf on
+.xrange -3 3
+.file parabola_hrtf.ogg x**2
+.xrange 0 10
+.yrange 0 10
+.file line_hrtf.ogg x
+.xrange 0 13
+.yrange -1 1
+.xticks 3.14
+.0ticks on
+.duration 10
+.file sine_hrtf.ogg sin(x)
+.duration 5
+.0ticks off
+.xticks off
+.yticks 1
+.xrange 0 40
+.yrange 0 100
+.file n_ln_n_hrtf.ogg x*ln(x)
+.xrange 0 10
+.yrange 0 10
+.file ln_hrtf.ogg ln(x)
