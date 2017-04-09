@@ -1,4 +1,6 @@
 """This file implements the UI, using the helper modules."""
+import sys
+import traceback
 import command_parser
 import sonifier
 import sympy
@@ -10,6 +12,7 @@ class Ui(command_parser.CommandParserBase):
     prompt = "y = "
 
     def __init__(self):
+        super().__init__()
         self.min_x = 0
         self.max_x = 10
         self.min_y = 0
@@ -21,6 +24,8 @@ class Ui(command_parser.CommandParserBase):
         self.zero_ticks = False
         self.x_symbol, self.y_symbol = sympy.symbols("x, y")
         self.current_graph = None
+        self.debug = False
+
 
     def parse(self, equation):
         return sympy_parser.parse_expr(equation, transformations = 
@@ -35,11 +40,18 @@ class Ui(command_parser.CommandParserBase):
             hrtf = self.hrtf, x_ticks = self.x_ticks, y_ticks = self.y_ticks, zero_ticks = self.zero_ticks)
 
     def do_default(self, argument):
-        print("Graphing ", argument)
-        if self.current_graph is not None:
-            self.current_graph.shutdown()
-        self.current_graph = self.make_graph(argument)
-        self.current_graph.to_audio_device()
+        try:
+            print("Graphing ", argument)
+            if self.current_graph is not None:
+                self.current_graph.shutdown()
+            self.current_graph = self.make_graph(argument)
+            self.current_graph.to_audio_device()
+        except Exception as e:
+            if self.debug:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                traceback.print_exception(exc_type, exc_value, exc_traceback)
+            else:
+                print("I don't recognize your input")
 
     def quit_hook(self):
         if self.current_graph:
@@ -233,3 +245,21 @@ HRTF is currently experimental. The model is suboptimal."""
         else:
             print("Invalid syntax.")
 
+    def do_debug(self, argument):
+        """ Enable debug mode.
+
+Syntax:
+.debug
+.debug <on|off>
+
+Synopsis: With no arguments, shows the status of debug mode.
+with one argument of "on off" turns debug mode on or off.
+If enabled, tracebacks from the program will be raised. If off, (default), the program will squelch all errors."""
+        argument = argument.lower()
+        if argument in {"off", "on"}:
+            self.debug = (True if argument == "on" else False)
+            print("Debug mode {}".format(argument))
+        elif argument:
+            print (".debug {} is not a valid use of .debug. Please type .help debug to receive help.".format(argument))
+        else:
+            print("Debug mode " + ("on" if self.debug else "off"))

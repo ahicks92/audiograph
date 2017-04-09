@@ -1,3 +1,6 @@
+import sys
+import traceback
+
 class CommandParserBase:
     """A basic command parser.
 
