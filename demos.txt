@@ -1,44 +1,44 @@
 .xrange -3 3
-.file parabola.ogg x**2
+.file parabola.wav x**2
 .xrange 0 10
 .yrange 0 10
-.file line.ogg x
+.file line.wav x
 .xrange 0 13
 .yrange -1 1
 .xticks 3.14
 .0ticks on
 .duration 10
-.file sine.ogg sin(x)
+.file sine.wav sin(x)
 .duration 5
 .0ticks off
 .xticks off
 .yticks 1
 .xrange 0 40
 .yrange 0 100
-.file n_ln_n.ogg x*ln(x)
+.file n_ln_n.wav x*ln(x)
 .xrange 0 10
 .yrange 0 10
-.file ln.ogg ln(x)
+.file ln.wav ln(x)
 
 .hrtf on
 .xrange -3 3
-.file parabola_hrtf.ogg x**2
+.file parabola_hrtf.wav x**2
 .xrange 0 10
 .yrange 0 10
-.file line_hrtf.ogg x
+.file line_hrtf.wav x
 .xrange 0 13
 .yrange -1 1
 .xticks 3.14
 .0ticks on
 .duration 10
-.file sine_hrtf.ogg sin(x)
+.file sine_hrtf.wav sin(x)
 .duration 5
 .0ticks off
 .xticks off
 .yticks 1
 .xrange 0 40
 .yrange 0 100
-.file n_ln_n_hrtf.ogg x*ln(x)
+.file n_ln_n_hrtf.wav x*ln(x)
 .xrange 0 10
 .yrange 0 10
-.file ln_hrtf.ogg ln(x)
+.file ln_hrtf.wav ln(x)
